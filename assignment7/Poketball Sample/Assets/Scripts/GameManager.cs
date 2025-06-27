@@ -26,7 +26,9 @@ public class GameManager : MonoBehaviour
     {
         // PlayerBall, CamObj, MyUIManager를 얻어온다.
         // ---------- TODO ---------- 
-        
+        PlayerBall = GameObject.Find("PlayerBall");
+        CamObj = GameObject.Find("Main Camera");
+        MyUIManager = FindObjectOfType<UIManager>();
         // -------------------- 
     }
 
@@ -40,7 +42,15 @@ public class GameManager : MonoBehaviour
     {
         // 좌클릭시 raycast하여 클릭 위치로 ShootBallTo 한다.
         // ---------- TODO ---------- 
-        
+        if(Input.GetMouseButtonDown(0))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            if(Physics.Raycast(ray, out hit))
+            {
+                ShootBallTo(hit.point);
+            }   
+        }
         // -------------------- 
     }
 
@@ -57,14 +67,43 @@ public class GameManager : MonoBehaviour
         // 각 공의 이름은 {index}이며, 아래 함수로 index에 맞는 Material을 적용시킨다.
         // Obj.GetComponent<MeshRenderer>().material = Resources.Load<Material>("Materials/ball_1");
         // ---------- TODO ---------- 
-        
+        int ballCount = 0;
+        int totalRows = 5;
+        for(int row=0;row<totalRows;row++)
+        {
+            int ballsInRow = row + 1;
+            for(int i=0;i<ballsInRow;i++)
+            {
+                Vector3 pos = StartPosition;
+                float xOffset = (-(ballsInRow - 1) * (BallRadius + RowSpacing)) / 2f + i * (BallRadius * 2 + RowSpacing);
+                float zOffset = row * (BallRadius * 2 + RowSpacing);
+                pos.x += xOffset;
+                pos.z += zOffset;
+                GameObject obj = Instantiate(BallPrefab, pos, StartRotation);
+                obj.name = ballCount.ToString();
+                string matName = "Materials/ball_" + (ballCount + 1).ToString();
+                Material mat = Resources.Load<Material>(matName);
+                if (mat != null)
+                {
+                    obj.GetComponent<MeshRenderer>().material = mat;
+                }
+                else
+                {
+                    Debug.LogWarning("Material " + matName + " not found.");
+                }
+                ballCount++;
+            }
+        }
         // -------------------- 
     }
     void CamMove()
     {
         // CamObj는 PlayerBall을 CamSpeed의 속도로 따라간다.
         // ---------- TODO ---------- 
-        
+        Vector3 targetPos = PlayerBall.transform.position;
+        Vector3 currentPos = CamObj.transform.position;
+        targetPos.y = currentPos.y;
+        CamObj.transform.position = Vector3.Lerp(currentPos, targetPos, Time.deltaTime * CamSpeed);
         // -------------------- 
     }
 
@@ -79,7 +118,12 @@ public class GameManager : MonoBehaviour
         // 힘은 CalcPower 함수로 계산하고, y축 방향 힘은 0으로 한다.
         // ForceMode.Impulse를 사용한다.
         // ---------- TODO ---------- 
-        
+        Rigidbody rb = PlayerBall.GetComponent<Rigidbody>();
+        Vector3 displacement = targetPos - PlayerBall.transform.position;
+        displacement.y = 0;
+        float power = CalcPower(displacement);
+        Vector3 force = displacement.normalized * power;
+        rb.AddForce(force, ForceMode.Impulse);
         // -------------------- 
     }
     
@@ -88,7 +132,7 @@ public class GameManager : MonoBehaviour
     {
         // "{ballName} falls"을 1초간 띄운다.
         // ---------- TODO ---------- 
-        
+        MyUIManager.DisplayText(ballName + " falls", 1.0f);
         // -------------------- 
     }
 }
