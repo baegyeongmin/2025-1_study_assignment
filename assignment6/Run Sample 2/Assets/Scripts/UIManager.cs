@@ -31,5 +31,4 @@ public class UIManager : MonoBehaviour
         yield return new WaitForSeconds(duration);
         MessageText.text = "";
     }
-
 }
